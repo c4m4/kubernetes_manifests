@@ -1,0 +1,20 @@
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: memcache
+  namespace: memcache
+  labels:
+    app: memcache
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/scheme: "http"
+    prometheus.io/port: "9150"
+spec:
+  ports:
+  - port: 11211
+    name: memcache
+  clusterIP: None
+  selector:
+    app: memcache

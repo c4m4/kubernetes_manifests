@@ -1,0 +1,38 @@
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: twemproxy
+  namespace: memcache
+  labels:
+    app: twemproxy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: twemproxy
+  template:
+    metadata:
+      labels:
+        app: twemproxy
+    spec:
+      containers:
+      - name: twemproxy
+        image: ganomede/twemproxy
+        command:
+          - /sbin/nutcracker
+          - -c
+          - /etc/config/nutcraker.yaml
+          - -v
+          - "7"
+          - -s
+          - "6222"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: twem-config
+
