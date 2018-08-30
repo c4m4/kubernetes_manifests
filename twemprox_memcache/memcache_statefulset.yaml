@@ -8,7 +8,7 @@ metadata:
 
 spec:
   serviceName: "memcache"
-  replicas: 3
+  replicas: 4
   template:
     metadata:
       labels:
@@ -21,6 +21,11 @@ spec:
         ports:
         - containerPort: 11211
           name: memcache
+        resources:
+          limits:
+            memory: 3500Mi
+          requests:
+            memory: 3000Mi
       - name: memcached-exporter
         image: prom/memcached-exporter
         imagePullPolicy: Always

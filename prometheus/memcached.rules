@@ -1,0 +1,30 @@
+apiVersion: v1
+data:
+  memcached.rules: |
+    groups:
+    - name: memcached.rules
+      rules:
+      - alert: memcache-connections
+        annotations:
+          message: memcache high connections usage '{{ $labels.instance }}'
+        expr: |
+          (memcached_max_connections - memcached_current_connections) < 1024
+        for: 30s
+        labels:
+          severity: critical
+      - alert: memcache-lowmemory
+        annotations:
+          message: memcache high memory usage '{{ $labels.instance }} less then 200M available'
+        expr: |
+          (memcached_limit_bytes - memcached_current_bytes) <= (200 * 1024 * 1024)
+        for: 0s
+        labels:
+          severity: critical
+kind: ConfigMap
+metadata:
+  labels:
+    prometheus: k8s
+    role: alert-rules
+  name: memcachedrules
+  namespace: monitoring
+~                                                                 
