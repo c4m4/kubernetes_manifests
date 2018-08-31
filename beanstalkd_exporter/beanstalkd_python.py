@@ -25,10 +25,11 @@ def collect():
   for tube in beanstalk.tubes():
     mydict = beanstalk.stats_tube(tube)
     for key in mydict.keys():
-      newstr = "beanstalkd_" + tube + "_" + key.replace('-', '_')
-      g = Gauge(newstr, tube + "_" + key)
+      newstr = "beanstalkd_" + key.replace('-', '_')
+      g = Gauge(newstr, newstr, labelnames=['queue'])
+      lb = g.labels(tube)
       if not str(mydict[key]):
-        g.set(mydict[key])
+        lb.set(mydict[key])
 
 collect()
 app = make_wsgi_app()
