@@ -1,0 +1,22 @@
+apiVersion: v1
+data:
+  beanstalkd.rules: |
+    groups:
+    - name: beanstalkd.rules
+      rules:
+      - alert: beanstalkd-lowmemory
+        annotations:
+          message: beanstalkd high memory usage '{{ $labels.pod_name }}'
+        expr: |
+          sum(container_memory_working_set_bytes{name=~"k8s_beanstalkd_beanstalkd.+"}) by (pod_name,instance) >= (150 * 1024 * 1024)
+        for: 0s
+        labels:
+          severity: critical
+kind: ConfigMap
+metadata:
+  labels:
+    prometheus: k8s
+    role: alert-rules
+  name: beanstalkdrules
+  namespace: monitoring
+
