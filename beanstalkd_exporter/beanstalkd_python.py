@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
+import time
+import random
 import sys
 import time
 import beanstalkc
-from prometheus_client import Gauge, make_wsgi_app
-from wsgiref.simple_server import make_server
-
-
+from prometheus_client import Metric, REGISTRY, CollectorRegistry, start_http_server
 
 if len(sys.argv[1:]) != 2:
   beanstalkd_host = "127.0.0.1"
@@ -17,22 +16,29 @@ else:
 
 print "connecting to %s -> port %s" % (beanstalkd_host, beanstalkd_port)
 
-beanstalk = beanstalkc.Connection(host=beanstalkd_host, port=int(beanstalkd_port))
+registry = CollectorRegistry()
 
-def collect():
-  data = {}
-  mylist = []
-  for tube in beanstalk.tubes():
-    mydict = beanstalk.stats_tube(tube)
-    for key in mydict.keys():
-      newstr = "beanstalkd_" + key.replace('-', '_')
-      g = Gauge(newstr, newstr, labelnames=['queue'])
-      lb = g.labels(tube)
-      if not str(mydict[key]):
-        lb.set(mydict[key])
+class MetricCollector(object):
+  def __init__(self):
+    pass
 
-collect()
-app = make_wsgi_app()
-httpd = make_server('', 9095, app)
-httpd.serve_forever()
+  def collect(self):
+    beanstalk = beanstalkc.Connection(host=beanstalkd_host, port=int(beanstalkd_port))
+    data = {}
+    mylist = []
+    for tube in beanstalk.tubes():
+      mydict = beanstalk.stats_tube(tube)
+      for key in mydict.keys():
+        newstr = "beanstalkd_" + key.replace('-', '_')
+        metric = Metric(newstr, newstr, 'gauge')
+        if not type(mydict[key]) == str:
+          metric.add_sample(newstr, value=mydict[key], labels={'queue': tube})
+          yield metric
+
+
+if __name__ == '__main__':
+  start_http_server(9095)
+  REGISTRY.register(MetricCollector())
+  while True:
+    time.sleep(3)
 
