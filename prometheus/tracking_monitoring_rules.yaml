@@ -1,0 +1,22 @@
+apiVersion: v1
+data:
+  tracking.rules: |
+    groups:
+    - name: tracking.rules
+      rules:
+      - alert: tracking-5xx-errors
+        annotations:
+          message: tracking 5xx http errors '{{ $labels.instance }} visualize kibana at http://logcollector.internal.hotelscan.net:8080 using kubernetes_cluster index'
+        expr: |
+          sum by(server_zone, instance, status_code) (rate(nginx_responses_total{ingress_class="tracking",namespace="",server_zone=~"tracking.*",status_code="5xx"}[1m])) > 0
+        for: 0s
+        labels:
+          severity: critical
+kind: ConfigMap
+metadata:
+  labels:
+    prometheus: k8s
+    role: alert-rules
+  name: trackingrules
+  namespace: monitoring
+
