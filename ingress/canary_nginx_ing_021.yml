@@ -1,0 +1,142 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: http-svca
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: http-svca
+  template:
+    metadata:
+      labels:
+        app: http-svca
+    spec:
+      containers:
+      - name: http-svc
+        image: jmalloc/echo-server
+        ports:
+        - containerPort: 8080
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: http-svcb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: http-svcb
+  template:
+    metadata:
+      labels:
+        app: http-svcb
+    spec:
+      containers:
+      - name: http-svc
+        image: jmalloc/echo-server
+        ports:  
+        - containerPort: 8080
+        env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-svca
+  labels:
+    app: http-svca
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: http-svca
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-svcb
+  labels:
+    app: http-svcb
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: http-svcb
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: http-svca
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: echo.com
+    http:
+      paths:
+      - backend:
+          serviceName: http-svca
+          servicePort: 80
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: http-svcb
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "50"
+    nginx.ingress.kubernetes.io/canary-by-cookie: "use_under_30_feature"
+spec:
+  rules:
+  - host: echo.com
+    http:
+      paths:
+      - backend:
+          serviceName: http-svcb
+          servicePort: 80
