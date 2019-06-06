@@ -1,0 +1,18 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: test_role
+  namespace: perms
+rules:
+- apiGroups:
+  - "*"
+  resources:
+  - pods
+  - extensions
+  - apps
+  - deployments
+  verbs:
+  - create
+  - get
+  - list
+  - watch
